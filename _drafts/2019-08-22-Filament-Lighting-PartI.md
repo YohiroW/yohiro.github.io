@@ -14,7 +14,7 @@ img_path: /assets/images/Filament/
 
 也可以搭配 [【GAMES101-现代计算机图形学入门-闫令琪】](https://www.bilibili.com/video/BV1X7411F744/?share_source=copy_web&vd_source=7a4dacf2c6974d860175d6d297f6d566) 食用，风味更佳。
 
-## 光照
+# 光照
 
 现在常用的引擎，如 Unity 以及 Unreal 等，对于光照的处理并不统一。
 
@@ -30,7 +30,7 @@ img_path: /assets/images/Filament/
 间接光照
 : 基于图像的照明(**I**mage **B**ased **L**ighting)
 
-### 单位
+## 单位
 
 | 光度学术语名 | 符号 | 单位 |
 | 光功率 (Luminous power) | $\Phi$ | 流明 Lumen($lm$) |
@@ -41,18 +41,18 @@ img_path: /assets/images/Filament/
 | 发光效能 (Luminous efficacy) | $\eta$ | Lumens per watt ($lm/W$) |
 | 发光效率 (Luminous efficiency) | $V$ | Percentage (%) |
 
-这里是 Filament 中的灯光类型，与常用的游戏引擎不太一样，
+下面是 Filament 中的灯光类型以及单位。
 
 | 灯光类型 | 单位 |
-| 方向光 | |
-| 点光源 | |
-| 聚光灯 | |
-| 光度灯光 | |
-| 光度遮罩灯光 | |
-| 区域光 | |
-| 基于图像的灯光 | |
+| 方向光 | 照度 Lux ($lx$) or $lm/m^2$ |
+| 点光源 | 光功率 Lumen ($lm$) |
+| 聚光灯 | 光功率 Lumen ($lm$) |
+| 光度灯光 | 光强 Candela ($cd$) or $lm/sr$ |
+| 光度遮罩灯光 | 光功率 Lumen ($lm$) |
+| 区域光 | 光功率 Lumen ($lm$) |
+| 基于图像的灯光 | 光亮度/发光率 Nit ($nt$) or $cd/m^2$ |
 
-#### 关于辐射功率单位
+### 关于辐射功率单位
 
 艺术家可能习惯于通过功率来衡量灯光的亮度，因此我们应该允许用户使用功率单位来定义灯光的亮度。转换如下:
 
@@ -60,7 +60,7 @@ $$\begin{equation}
 \Phi = \Phi_e \eta
 \end{equation}$$
 
-这个等式中 $\eta$ 指的是发光效能，单位是流明每瓦 ($lm/W$) ，根据[维基百科中的说法](https://zh.wikipedia.org/wiki/%E7%99%BC%E5%85%89%E6%95%88%E8%83%BD)，已知最大的发光效能为 683 $lm/W$ ，那么用发光效率 $V$ 来表示的话，就是这样：
+这个等式中 $\eta$ 指的是发光效能，单位是流明每瓦 ($lm/W$) ，根据[维基百科中的说法](https://zh.wikipedia.org/wiki/%E7%99%BC%E5%85%89%E6%95%88%E8%83%BD)，已知最大的发光效能为 **683** $lm/W$ ，那么用发光效率 $V$ 来表示的话，就是这样：
 
 $$\begin{equation}
 \Phi = \Phi_e 683 \times V
@@ -77,7 +77,7 @@ $$\begin{equation}\label{derivedLuminousIntensity}
 I = E \cdot d^2
 \end{equation}$$
 
-### 直接光照
+## 直接光照
 
 上面仅对不同的光源类型定义了单位，Filament 使用物理光单位，亮度的计算是在 shader 中进行的，因此所有的光照函数都要计算亮度 $L_{out}$（也称*出射辐亮度*），该亮度值取决于光照度 $E$ 和 BSDF $f(v,l)$
 
@@ -85,9 +85,11 @@ $$\begin{equation}\label{luminanceEquation}
 L_{out} = f(v,l)E
 \end{equation}$$
 
-#### 方向光
+### 方向光
 
 方向光主要用于户外环境，用来模拟阳光/月光，并不存在于真实的世界中，但因为太阳/月亮的距离足够远，所以可以近似为平行的方向光。
+
+![](diagram_directional_light.png)
 
 这种光照对表面的漫反射效果不错，但对于镜面反射的效果并不好。在寒霜引擎中，将来自太阳的方向光模拟为圆盘状的区域光，作为镜面反射的补偿。
 
@@ -97,15 +99,14 @@ $$\begin{equation}
 L_{out} = f(v,l) E_{\bot} \left< N \cdot L \right>
 \end{equation}$$
 
-其中 $E_{\bot}$ 是光源对垂直于光源的表面的照度，下面是参考值天空和阳光的参考值（满月为 1$lx$）：
+其中 $E_{\bot}$ 是光源对垂直于光源的表面的照度，下面是加州 3 月的晴朗天气下测得的天空和阳光的照度值（满月为 1$lx$）：
 
 | 光源 | 上午 10 点 | 中午 12 点 | 下午 5:30 |
 | $Sky_{\bot}$ + $Sun_{\bot}$ | 120,000 | 130,000 | 90,000 |
 | $Sky_{\bot}$ | 20,000 | 25,000 | 9,000 |
 | $Sun_{\bot}$ | 100,000 | 105,000 | 81,000 |
-_加州 3 月的晴朗天气下测得的照度值_
 
-Filament 中方向光的实现:
+方向光的实现:
 
 ```glsl
 vec3 l = normalize(-lightDirection);
@@ -117,22 +118,24 @@ float illuminance = lightIntensity * NoL;
 vec3 luminance = BSDF(v, l) * illuminance;
 ```
 
-#### 精准光
+### 精准光
 
 一般的渲染引擎中支持两种精准光，点光源和聚光灯，精准光是指*从某一位置发光的光源*，这种光源的光线均匀地照射到各个方向。但它不是物理准确的，因为下面两个原因：
 
 1. 过于准确，且趋于无限小
-2. 不遵循[平方反比准则](https://en.wikipedia.org/wiki/Inverse-square_law)
+2. 不遵循[平方反比原则](https://en.wikipedia.org/wiki/Inverse-square_law)
 
-对于 1，可以引入区域光解决这一问题，但精准光的成本也较低，所以是可以接受的
+对于 1，可以引入区域光解决这一问题。对于 2 直接引入材质表面着色点到光源的距离 $d$ 来解决，如下。
 
 $$\begin{equation}
-E = L_{in} \left< N \cdot L \right> = \frac{I}{d^2} \left< N \codt L \right>
+E = L_{in} \left< N \cdot L \right> = \frac{I}{d^2} \left< N \cdot L \right>
 \end{equation}$$
 
-##### 点光源
+#### 点光源
 
-点光源仅由空间中的位置来定义
+点光源仅由空间中的位置来定义。
+
+![](diagram_point_light.png)
 
 点光源的单位是发光功率（$lm$），发光功率是通过光源立体角上的发光强度的积分计算的：
 
@@ -147,15 +150,68 @@ $$\begin{equation}
 I = \frac{\Phi}{4 \pi}
 \end{equation}$$
 
-### IBL
+结合上面提到的 $L_{out}=f(v,l)E$，最终可以得到：
 
-### 静态光照
+$$\begin{equation}
+L_{out} = f(v,l) \frac{\Phi}{4 \pi d^2} \left< N \cdot L \right>
+\end{equation}$$
 
-### 透明/半透明光照
+#### 聚光灯
 
-### 遮挡
+聚光灯由位置、方向和两个锥角 $$\theta_{inner}$$ 和 $$\theta_{outer}$$ 来定义。一般的光照使用 $$\frac{1}{d^2}$$ 来定义距离的衰减，而对于聚光灯 $$\theta_{inner}$$ 和 $$\theta_{outer}$$ 定义了聚光灯锥形区域两侧的角度衰减。
 
-### 法线映射
+![](diagram_spot_light.png)
+
+$$\begin{equation}\label{spotLightLuminousPower}
+\Phi = \int_{\Omega} I dl = \int_{0}^{2\pi} \int_{0}^{\theta_{outer}} I d\theta d\phi = 2 \pi (1 - cos\frac{\theta_{outer}}{2})I\\\\
+I = \frac{\Phi}{2 \pi (1 - cos\frac{\theta_{outer}}{2})}
+\end{equation}$$
+
+但在这里，聚光灯的圆锥与亮度耦合在一起，调整锥角的角度时，也会同时影响亮度。因此，需要将角度和亮度解耦以便灯光师调节：
+
+$$\begin{equation}\label{spotLightLuminousPowerB}
+\Phi = \pi I \\\\
+I = \frac{\Phi}{\pi} \\\\
+\end{equation}$$
+
+聚光灯的两种评估方式：
+
+从吸收光的角度
+: 
+
+$$\begin{equation}\label{spotAbsorber}
+L_{out} = f(v,l) \frac{\Phi}{\pi d^2} \left< \NoL \right> \lambda(l)
+\end{equation}$$
+
+从反射光的角度
+: 
+
+$$\begin{equation}\label{spotReflector}
+L_{out} = f(v,l) \frac{\Phi}{2 \pi (1 - cos\frac{\theta_{outer}}{2}) d^2} \left< \NoL \right> \lambda(l)
+\end{equation}$$
+
+以上两式中的 $$\lambda(l)$$ 项是聚光灯的角度衰减因子，描述如下：
+
+$$\begin{equation}\label{spotAngleAtt}
+\lambda(l) = \frac{l \times spotDirection - cos\theta_{outer}}{cos\theta_{inner} - cos\theta_{outer}}
+\end{equation}$$
+
+#### 衰减函数
+
+光照的衰减需要正确地评估衰减因子，简单的 $\frac{1}{d^2}$ 项并不好使，因为：
+
+1. 当几何体与光源相接触，可能会有 $d$ = 0，从而导致除以 0。
+2. 理论上每个光源的范围是无限远的，在有多光源的场合会导致 $\frac{1}{d^2}$ 永远不会为 0， 从而导致一些着色错误。
+
+## IBL
+
+## 静态光照
+
+## 透明/半透明光照
+
+## 遮挡
+
+## 法线映射
 
 ## 体积效果
 
