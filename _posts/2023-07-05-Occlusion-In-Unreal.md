@@ -351,7 +351,9 @@ void FGPUOcclusionParallel::AddPrimitives(FPrimitiveRange PrimitiveRange)
 
     AcceptOcclusionResults 能够提供当帧的 Occlusion 结果。对于 HISM 来说，它内部维护了一个 ViewId 和 FFoliageOcclusionResults 的 Map，如果 SubOcclusionQueries 与 HISM 的 FFoliageOcclusionResults 不匹配的时候，根据 AcceptOcclusionResults 的结果重建该 Map。可能因为存在这种 Clustering 概念的几何体集合，所以引擎的代码里才引入了 SubQueries 这个概念。
 
-- Nanite mesh 走 GPU 剔除的 pass，如果使用 FreezeRendering 调试会发现 nanite mesh 不会被裁剪
+- Nanite mesh 走 GPU 剔除的 pass，如果使用 FreezeRendering 调试会发现 nanite mesh 不会被裁剪。此外有些渲染特性的开启也会导致相应的 primitive 不会被遮挡裁剪剔除掉，具体的可以查看相应的 SceneProxy 的 CanBeOccluded 函数。
+
+- Mobility 为静态（static 以及 Stationary）和纯动态的组件，Occlusion Query 的处理不同，笼统地说，动态组件的查询会更精确，因为动态的 primitive 不会使用 grouped，将作为独立的 primitive 去查询。
 
 ## 参考
 
