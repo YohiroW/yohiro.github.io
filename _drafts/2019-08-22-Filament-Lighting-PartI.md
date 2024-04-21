@@ -177,14 +177,14 @@ I = \frac{\Phi}{\pi} \\\\
 聚光灯的两种评估方式：
 
 从吸收光的角度
-: 
+:
 
 $$\begin{equation}\label{spotAbsorber}
 L_{out} = f(v,l) \frac{\Phi}{\pi d^2} \left< \NoL \right> \lambda(l)
 \end{equation}$$
 
 从反射光的角度
-: 
+:
 
 $$\begin{equation}\label{spotReflector}
 L_{out} = f(v,l) \frac{\Phi}{2 \pi (1 - cos\frac{\theta_{outer}}{2}) d^2} \left< \NoL \right> \lambda(l)
@@ -201,7 +201,17 @@ $$\begin{equation}\label{spotAngleAtt}
 光照的衰减需要正确地评估衰减因子，简单的 $\frac{1}{d^2}$ 项并不好使，因为：
 
 1. 当几何体与光源相接触，可能会有 $d$ = 0，从而导致除以 0。
-2. 理论上每个光源的范围是无限远的，在有多光源的场合会导致 $\frac{1}{d^2}$ 永远不会为 0， 从而导致一些着色错误。
+2. 理论上每个光源的范围是无限远的，在有多光源的场合会导致 $\frac{1}{d^2}$ 永远不会为 0，如果要正确着色，需要对场景内每一个光源进行评估。
+
+为解决上述问题 1，Filament 的解决方式是将点光源假设为一个小半径为 1 cm 的球形区域光。
+
+$$\begin{equation}\label{finitePunctualLight}
+E = \frac{I}{max(d^2, {0.01}^2)}
+\end{equation}$$
+
+为解决问题 2， 可以为每个光源引入一个影响半径的参数解决。
+
+从数学上讲，光的照度应在影响半径定义的极限处平滑地达到零。
 
 ## IBL
 

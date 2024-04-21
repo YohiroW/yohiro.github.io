@@ -6,7 +6,7 @@ categories: [Algorithm, Machine Learning]
 tags: [algorithm, machine learning, clustering]
 math: true
 render_with_liquid: false
-img_path: /assets/images/{}/
+img_path: /assets/images/DBSCAN/
 image:
   path: https://scikit-learn.org/stable/_images/sphx_glr_plot_dbscan_002.png
 ---
@@ -14,7 +14,8 @@ image:
 
 **DBSCAN (Density-based spatial clustering of applications with noise)** 是一个基于密度的聚类算法：给定空间里的一个点集，该算法能把附近的点分成一组（有很多相邻点的点），并标记出位于低密度区域的噪声点。
 
-原版论文在[这里](https://cdn.aaai.org/KDD/1996/KDD96-037.pdf)
+原版论文在[这里](https://cdn.aaai.org/KDD/1996/KD
+D96-037.pdf)
 
 ## 概念描述及参数
 
@@ -25,32 +26,43 @@ image:
 | $\epsilon$      | $P_i$ 的邻域距离阈值  |
 | $MinPts$        | $P_i$ 在 $\epsilon$ 范围内样本的数量 |
 
+![definition_1](Definition1.png)
+_核心点与边缘点（左）和直接密度可达（右）_
+
 核心点 (Core Points)
 : 满足条件，在 $\epsilon$ 范围内，具有 $MinPts$ 个样本的样本点 $P_i$，称作核心点。
 
 边缘点 (Border Points)
-: 在`核心点` $\epsilon$ 范围内，且在样本点 $\epsilon$ 范围内的样本数量小于 $MinPts$，称作边缘点
+: 在**核心点** $\epsilon$ 范围内，且在样本点 $\epsilon$ 范围内的样本数量小于 $MinPts$，称作边缘点
 
 噪声点 (Noise Points/ Outlier)
 : 非可达点，即不在核心点的 $\epsilon$ 范围内的样本点，称为噪声点
 
 直接密度可达 (directly density-reachable)
-: 当 $P_i$ 在除 $P_i$ 以外的任意样本点 $P_j$ 的邻域半径 $\epsilon$ 范围内，**且 $P_j$ 是一个核心点**，则称 $P_i$ 可由 $P_j$ 直接密度可达或直接可达。
+: 当 $P$ 在除 $P$ 以外的任意样本点 $Q$ 的邻域半径 $\epsilon$ 范围内，**且 $Q$ 是一个核心点**，则称 $P$ 可由 $Q$ 直接（密度）可达。
 
-也就是说，核心点 $P_i$ 邻域距离范围内除 $P_i$ 的点，都是直接可达的。
+- 也就是说，核心点 $P$ 的 $\epsilon$ 范围内除 $P$ 以外的点，都是由 $P$ 直接可达的，同理，非核心点没有**直接可达**的点。
+
+![definition_2](Definition2.png)
+_可达性（左）和连接性（右）_
 
 密度可达 (density-reachable)
-: 对于样本中的点存在路径 $P_1$,...,$P_n$，使 $P_1$ = $P$，$P_n$ = $Q$，如果该路径中任意一点 $P_{i+1}$ 可以由 $P_{i}$ 直接可达，那么称 $Q$ 可从 $P$ 密度可达，或直接成为可达的。
+: 对于样本中的点，存在路径 $P_1$,...,$P_n$，使 $P_1$ = $P$，$P_n$ = $Q$，如果该路径中任意一点 $P_{i+1}$ 可以由 $P_{i}$ 直接可达，那么称 $Q$ 是可从 $P$ （密度）可达的。
 
-根据该定义，非核心点是可以由其他点可达的，但没有点是由非核心点可达的。
+- 根据该定义，非核心点是可以由其他点可达的，但没有点是由非核心点可达的。
+- 参考上图，可达性是**非对称的**，$P$ 到 $Q$ 可达不代表 $Q$ 到 $P$ 可达。
 
 密度相连 (density-connected)
-: 
+: 对于样本中的点，存在一个点 $O$ 使得 $P$ 和 $Q$ 都是由 $O$ 可达的，则点 $P$ 和点 $Q$ 被称为（密度）相连的，连接性是**对称的**。
+
+- 同一个聚类中的任意两点都是相连的。
+- 如果 $P$ 是由聚类里的点 $Q$ 可达的，那么 $P$ 和 $Q$ 在同一聚类中。
+
+### 举例
 
 ![referenced from wikipedia](https://upload.wikimedia.org/wikipedia/commons/thumb/a/af/DBSCAN-Illustration.svg/1280px-DBSCAN-Illustration.svg.png)
 
 上图中，$MinPts$ = 4，点 A 和其他红色点是核心点，因为它们的 $\epsilon$ 邻域（图中红色圆圈）里包含最少 4 个点（包括自己），由于它们之间相互相可达，它们形成了一个聚类。点 B 和点 C 不是核心点，但它们可由 A 经其他核心点可达，作为边缘点加入同一个聚类。点 N 是噪声点，它既不是核心点，又不由其他点可达。
-
 
 ### 距离函数
 
