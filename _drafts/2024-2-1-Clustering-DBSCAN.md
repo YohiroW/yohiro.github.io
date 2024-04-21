@@ -26,7 +26,7 @@ image:
 | $MinPts$        | $P_i$ 在 $\epsilon$ 范围内样本的数量 |
 
 核心点 (Core Points)
-: 满足条件，在 $\epsilon$ 范围内，具有 $MinPts$ 个样本的样本点 $P_i$，称作核心点
+: 满足条件，在 $\epsilon$ 范围内，具有 $MinPts$ 个样本的样本点 $P_i$，称作核心点。
 
 边缘点 (Border Points)
 : 在`核心点` $\epsilon$ 范围内，且在样本点 $\epsilon$ 范围内的样本数量小于 $MinPts$，称作边缘点
@@ -34,18 +34,23 @@ image:
 噪声点 (Noise Points/ Outlier)
 : 非可达点，即不在核心点的 $\epsilon$ 范围内的样本点，称为噪声点
 
+直接密度可达 (directly density-reachable)
+: 当 $P_i$ 在除 $P_i$ 以外的任意样本点 $P_j$ 的邻域半径 $\epsilon$ 范围内，**且 $P_j$ 是一个核心点**，则称 $P_i$ 可由 $P_j$ 直接密度可达或直接可达。
+
+也就是说，核心点 $P_i$ 邻域距离范围内除 $P_i$ 的点，都是直接可达的。
+
+密度可达 (density-reachable)
+: 对于样本中的点存在路径 $P_1$,...,$P_n$，使 $P_1$ = $P$，$P_n$ = $Q$，如果该路径中任意一点 $P_{i+1}$ 可以由 $P_{i}$ 直接可达，那么称 $Q$ 可从 $P$ 密度可达，或直接成为可达的。
+
+根据该定义，非核心点是可以由其他点可达的，但没有点是由非核心点可达的。
+
+密度相连 (density-connected)
+: 
+
 ![referenced from wikipedia](https://upload.wikimedia.org/wikipedia/commons/thumb/a/af/DBSCAN-Illustration.svg/1280px-DBSCAN-Illustration.svg.png)
 
 上图中，$MinPts$ = 4，点 A 和其他红色点是核心点，因为它们的 $\epsilon$ 邻域（图中红色圆圈）里包含最少 4 个点（包括自己），由于它们之间相互相可达，它们形成了一个聚类。点 B 和点 C 不是核心点，但它们可由 A 经其他核心点可达，作为边缘点加入同一个聚类。点 N 是噪声点，它既不是核心点，又不由其他点可达。
 
-直接密度可达 (directly density-reachable)
-: 
-
-密度可达 (density-reachable)
-: 
-
-密度相连 (density-connected)
-: 
 
 ### 距离函数
 
