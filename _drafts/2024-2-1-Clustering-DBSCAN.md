@@ -66,6 +66,8 @@ _可达性（左）和连接性（右）_
 
 ### 距离函数
 
+这里的距离可以是任意空间内的距离函数，通常使用欧氏距离，在游戏开发中也可能会使用曼哈顿距离。为直观起见，本文中的距离均指的是欧式距离。
+
 ## 算法
 
 ### 步骤
@@ -83,46 +85,75 @@ _可达性（左）和连接性（右）_
 
 ### 伪代码
 
-[论文](https://cdn.aaai.org/KDD/1996/KDD96-037.pdf) 4.1 中有提供较为细致的伪代码，下面的伪代码摘录自维基：
+[论文](https://cdn.aaai.org/KDD/1996/KDD96-037.pdf) 4.1 中有提供较为细致的伪代码：
 
-```python
-DBSCAN(D, eps, MinPts) {
-   C = 0
-   for each point P in dataset D {
-      if P is visited
-         continue next point
-      mark P as visited
-      NeighborPts = regionQuery(P, eps)
-      if sizeof(NeighborPts) < MinPts
-         mark P as NOISE
-      else {
-         C = next cluster
-         expandCluster(P, NeighborPts, C, eps, MinPts)
-      }
-   }
-}
-
-expandCluster(P, NeighborPts, C, eps, MinPts) {
-   add P to cluster C
-   for each point P' in NeighborPts { 
-      if P' is not visited {
-         mark P' as visited
-         NeighborPts' = regionQuery(P', eps)
-         if sizeof(NeighborPts') >= MinPts
-            NeighborPts = NeighborPts joined with NeighborPts'
-      }
-      if P' is not yet member of any cluster
-         add P' to cluster C
-   }
-}
-
-regionQuery(P, eps)
-   return all points within P's eps-neighborhood (including P)
+```pascal
+DBSCAN(SetOfPoints, Eps, MinPts)
+// SetOfPoints is UNCLASSIFIED
+    ClusterId := nextId(NOISE)
+    FOR i FROM 1 TO SetOfPoints.size DO
+        Point := SetOfPoints.get(i)
+        IF Point.CiId = UNCLASSIFIED THEN
+            IF ExpandCluster(SetOfPoints, Point, ClusterId, Eps, MinPts) THEN
+                ClusterId := nextId(ClusterId)
+            END IF
+        END IF
+    END FOR
+END // DBSCAN
 ```
+
+以及比较重要的 ExpandCluster 函数：
+
+```pascal
+ExpandCluster(SetOfPoints, Point, ClId, Eps,MinPts) : Boolean
+    seeds := SetOfPoints.regionQuery(Point, Eps)
+    IF seeds.size < MinPts THEN // no core point
+        SetOfPoint.changeClId(Point, NOISE)
+        RETURN False
+    ELSE // all points in seeds are density-
+         // reachable from Point
+        SetOfpoints.changeClId(seeds, ClId)
+        seeds .delete (Point)
+        WHILE seeds <> Empty DO
+            currentP := seeds.first()
+            result := SetOfpoints.regionQuery(currentP, Eps)
+            IF result.size >= MinPts THEN
+                FOR i FROM 1 TO result.size DO
+                    resultP := result.get(i)
+                    IF resultP. ClId IN {UNCLASSIFIED, NOISE} THEN
+                        IF resultP.ClId = UNCLASSIFIED THEN
+                            seeds.append(resultP)
+                        END IF
+                        SetOfPoints.changeClId( resultP, ClId)
+                    END IF // UNCLASSIFIED or NOISE
+                END FOR
+            END IF // result.size >= MinPts
+            seeds.delete(currentP)
+        END WHILE // seeds <> Empty
+        RETURN True
+    END IF
+END // ExpandCluster
+```
+
+## 评估
+
+### 稳定性
+
+DBSCAN 的结果是确定的，对于给定顺序的数据集来说，相同参数下生成的 Clusters 是相同的。然而，当相同数据的顺序不同时，生成的 Clusters 较之另一种顺序会有所不同。
+
+首先，即使不同顺序的数据集的核心点是相同的，Clusters 的标签会取决于数据集中各采样点的顺序。其次，可达点被分配到哪个 Clusters 也是会受到数据顺序的影响的，比如一个边缘采样点位于一个分属于两个不同的 Clusters 的核心点的 $\epsilon$ 范围内，这时该边缘点被分配到哪个 Cluster 中取决于哪一个 Cluster 先创建。
+
+因此说 DBSCAN 是`不稳定`的。
+
+### 效率
+
+当 $\epsilon$ 较大，且 $D$ 数量也比较庞大时，kd 树建树的时间消耗会非常大，因此 DBSCAN `不太适合样本分布比较平均的场合`。
+
+- 考虑使用 [OPTICS](https://zh.wikipedia.org/wiki/OPTICS%E7%AE%97%E6%B3%95)
 
 ### 实现参考
 
-这里的参考选择了 [SimpleDBSCAN](https://github.com/CallmeNezha/SimpleDBSCAN)，一个轻量的 header-only 的 C++ 实现。SimpleDBSCAN 的实现中借用了 kd 树来做复杂的样本划分，以加速大样本的查询。
+这里的参考选择了 [SimpleDBSCAN](https://github.com/CallmeNezha/SimpleDBSCAN)，一个轻量的 header-only 的 C++ 实现。SimpleDBSCAN 的实现中使用了 [kd 树](https://oi-wiki.org/ds/kdt/)来做复杂的样本划分，以加速大样本的查询。
 
 核心实现如下，其中 V 相当于样本集 $D$，dim 为数据的维度，disfunc 为样本距离函数，一般是欧氏距离。函数 regionQuery 使用 kd 树获取邻域的样本点集。
 
@@ -218,22 +249,6 @@ void DBSCAN<T, Float>::expandCluster(const uint cid, const std::vector<uint>& ne
 std::vector<std::vector<uint>>  Clusters;
 std::vector<uint>               Noise;
 ```
-
-## 评估
-
-### 稳定性
-
-DBSCAN 的结果是确定的，对于给定顺序的数据集来说，相同参数下生成的 Clusters 是相同的。然而，当相同数据的顺序不同时，生成的 Clusters 较之另一种顺序会有所不同。
-
-首先，即使不同顺序的数据集的核心点是相同的，Clusters 的标签会取决于数据集中各采样点的顺序。其次，可达点被分配到哪个 Clusters 也是会受到数据顺序的影响的，比如一个边缘采样点位于一个分属于两个不同的 Clusters 的核心点的 $\epsilon$ 范围内，这时该边缘点被分配到哪个 Cluster 中取决于哪一个 Cluster 先创建。
-
-因此说 DBSCAN 是`不稳定`的。
-
-### 效率
-
-当 $\epsilon$ 较大，且 $D$ 数量也比较庞大时，kd 树建树的时间消耗会非常大，因此 DBSCAN `不太适合样本分布比较平均的场合`。
-
-- 考虑使用 [OPTICS](https://zh.wikipedia.org/wiki/OPTICS%E7%AE%97%E6%B3%95)
 
 ## 参考
 
