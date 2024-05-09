@@ -72,6 +72,11 @@ _可达性（左）和连接性（右）_
 
 ### 步骤
 
+1. 初始化样本集 $D$，以及 $\epsilon$，$MinPts$ 和距离函数
+2. 从任意一点 $P$ 开始探索邻域的样本点
+3. 创建聚类
+4. 另外的样本点出发，重复以上步骤
+
 为确定 Cluster, DBSCAN 算法首先从集合里任意一点 $P$ 开始遍历所有密度可达点。然后根据 $\epsilon$ 和 $MinPts$ 判断 $P$ 是核心点还是边缘点。
 
 如果 $P$ 是核心点，该流程会产生一个 Cluster。
@@ -85,7 +90,7 @@ _可达性（左）和连接性（右）_
 
 ### 伪代码
 
-[论文](https://cdn.aaai.org/KDD/1996/KDD96-037.pdf) 4.1 中有提供较为细致的伪代码：
+[论文](https://cdn.aaai.org/KDD/1996/KDD96-037.pdf) 4.1 中提供了较为细致的伪代码：
 
 ```pascal
 DBSCAN(SetOfPoints, Eps, MinPts)
@@ -147,108 +152,7 @@ DBSCAN 的结果是确定的，对于给定顺序的数据集来说，相同参�
 
 ### 效率
 
-当 $\epsilon$ 较大，且 $D$ 数量也比较庞大时，kd 树建树的时间消耗会非常大，因此 DBSCAN `不太适合样本分布比较平均的场合`。
-
-- 考虑使用 [OPTICS](https://zh.wikipedia.org/wiki/OPTICS%E7%AE%97%E6%B3%95)
-
-### 实现参考
-
-这里的参考选择了 [SimpleDBSCAN](https://github.com/CallmeNezha/SimpleDBSCAN)，一个轻量的 header-only 的 C++ 实现。SimpleDBSCAN 的实现中使用了 [kd 树](https://oi-wiki.org/ds/kdt/)来做复杂的样本划分，以加速大样本的查询。
-
-核心实现如下，其中 V 相当于样本集 $D$，dim 为数据的维度，disfunc 为样本距离函数，一般是欧氏距离。函数 regionQuery 使用 kd 树获取邻域的样本点集。
-
-```cpp
-template<typename T, typename Float>
-int DBSCAN<T, Float>::Run(
-    TVector*                V
-    , const uint            dim
-    , const Float           eps
-    , const uint            min
-    , const DistanceFunc&   disfunc
-) {
-
-    // Validate...
-    // initialization...
-
-#if BRUTEFORCE
-#else
-this->buildKdtree(this->_data);
-#endif // !BRUTEFORCE
-
-    for (uint pid = 0; pid < this->_datalen; ++pid) {
-        // Check if point forms a cluster
-        this->_borderset.clear();
-        if (!this->_visited[pid]) {
-            this->_visited[pid] = true;
-
-            // Outliner it maybe noise or on the border of one cluster.
-            const std::vector<uint> neightbors = this->regionQuery(pid);
-            if (neightbors.size() < this->_minpts) {
-                continue;
-            }
-            else {
-                uint cid = (uint)this->Clusters.size();
-                this->Clusters.push_back(std::vector<uint>());
-                // first blood
-                this->addToBorderSet(pid);
-                this->addToCluster(pid, cid);
-                this->expandCluster(cid, neightbors);
-            }
-        }
-    }
-
-    for (uint pid = 0; pid < this->_datalen; ++pid) {
-        if (!this->_assigned[pid]) {
-            this->Noise.push_back(pid);
-        }
-    }
-
-#if BRUTEFORCE
-#else
-    this->destroyKdtree();
-#endif // !BRUTEFORCE
-    // ...
-}
-```
-
-```cpp
-template<typename T, typename Float>
-void DBSCAN<T, Float>::expandCluster(const uint cid, const std::vector<uint>& neighbors) {
-
-    std::queue<uint> border; // it has unvisited , visited unassigned pts. visited assigned will not appear
-    for (uint pid : neighbors) border.push(pid); 
-    this->addToBorderSet(neighbors);
-    
-    while(border.size() > 0) { 
-        const uint pid = border.front(); border.pop();
-
-        if (!this->_visited[pid]) {
-
-            // not been visited, great! , hurry to mark it visited
-            this->_visited[pid] = true;
-            const std::vector<uint> pidneighbors = this->regionQuery(pid);
-
-            // Core point, the neighbors will be expanded
-            if (pidneighbors.size() >= this->_minpts) {
-                this->addToCluster(pid, cid);
-                for (uint pidnid : pidneighbors) { 
-                    if (!this->isInBorderSet(pidnid)) { 
-                        border.push(pidnid); 
-                        this->addToBorderSet(pidnid);
-                    }
-                }
-            }
-        }
-    }
-}
-```
-
-聚类的最终结果会返回到 DBSCAN 类的成员：
-
-```cpp
-std::vector<std::vector<uint>>  Clusters;
-std::vector<uint>               Noise;
-```
+当 $\epsilon$ 较大，且 $D$ 数量也比较庞大时，kd 树建树的时间消耗会非常大，因此 DBSCAN `不太适合样本分布比较平均的场合`，此时可以考虑使用 [OPTICS](https://zh.wikipedia.org/wiki/OPTICS%E7%AE%97%E6%B3%95)。
 
 ## 参考
 
@@ -258,3 +162,4 @@ std::vector<uint>               Noise;
 - [常用聚类算法](https://zhuanlan.zhihu.com/p/104355127)
 - [SimpleDBSCAN](https://github.com/CallmeNezha/SimpleDBSCAN)
 - [DBSCAN Clustering Easily Explained with Implementation](https://www.youtube.com/watch?v=C3r7tGRe2eI)
+- [DBSCAN的参数选择及其应用于离群值检测](https://blog.csdn.net/Cyrus_May/article/details/113504879)
