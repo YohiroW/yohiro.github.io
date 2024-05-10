@@ -164,7 +164,7 @@ END // ExpandCluster
 
 参数的选择向来是个令人头大的问题，在对样本集缺少了解的情况下，很难选出合适的参数。论文中提到了一种叫做 **k-distance** 的选择 $\epsilon$ 的方法，我将在应用时加以解释。但是即使如此，这个过程也是要不断迭代，最好在数据可视化时进行调整。
 
-假如样本集中的点密度差异较大，也很难产生一个满足所有情况的聚类结果，因为全局的参数 $\epsilon$ 和 $MinPts$ 只有一套。密度变化较大的情况，可以考虑使用 [OPTICS](https://zh.wikipedia.org/wiki/OPTICS%E7%AE%97%E6%B3%95)。
+假如样本集中的点密度差异较大，也很难产生一个满足所有情况的聚类结果，因为全局的参数 $\epsilon$ 和 $MinPts$ 只有一套。密度变化较大的情况，可以考虑使用 [OPTICS](https://zh.wikipedia.org/wiki/OPTICS%E7%AE%97%E6%B3%95) 或者 [HDBSCAN](https://scikit-learn.org/stable/modules/clustering.html#hdbscan)。
 
 ### 稳定性
 
@@ -188,5 +188,4 @@ DBSCAN 的结果是确定的，对于给定顺序的数据集来说，相同参�
 - [scikit-leran clustering](https://scikit-learn.org/stable/modules/clustering.html#dbscan)
 - [基于密度的聚类算法（1）——DBSCAN详解](https://zhuanlan.zhihu.com/p/643338798)
 - [常用聚类算法](https://zhuanlan.zhihu.com/p/104355127)
-- [SimpleDBSCAN](https://github.com/CallmeNezha/SimpleDBSCAN)
 - [DBSCAN Clustering Easily Explained with Implementation](https://www.youtube.com/watch?v=C3r7tGRe2eI)
