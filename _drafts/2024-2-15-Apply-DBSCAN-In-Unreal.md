@@ -12,6 +12,27 @@ img_path: /assets/images/DBSCAN/
 
 在[上一篇文章](/posts/Clustering-DBSCAN)中介绍了 DBSCAN 的原理，这里来记录一下在引擎中的应用。
 
+我决定引入一个聚类的方式是为了尝试在 UE 中将放置某种包围盒的步骤自动化，从而提高迭代效率。
+
+我在场景中沿着 Nav Mesh 生成了采样点，采样点的数量为 4643 个，分布如下：
+
+![Samples](Samples.png)
+_可以视作采样点的集合 D_
+
+在参照下图对其他聚类算法进行了一些对比后，选择了使用 DBSCAN。
+
+![cluster_comparison](https://scikit-learn.org/stable/_images/sphx_glr_plot_cluster_comparison_001.png)
+_各种聚类算法的效果对比_
+
+这个选择出于以下几个原因：
+
+1. 采样点是沿着 Nav Mesh 生成的，密度比较平均
+2. DBSCAN 的算法比较简单，易于实现
+3. 游戏中的路径形成的样本集有可能是非凸的
+4. 噪声多可以接受，身是可以通过去除噪声点而达到离线构建效率优化的目的
+
+综上，我选择了 DBSCAN。
+
 ## 参数选择
 
 之前的文章中提到过参数选择的问题，[原论文](https://cdn.aaai.org/KDD/1996/KDD96-037.pdf)中介绍了一种叫做 **k-dist** 的选择 Epsilon 和 MinPts 的方法。
@@ -53,28 +74,13 @@ DBSCAN 需要两个参数，即 Eps 和 MinPts。然而，我们的实验表明�
 
 ![k-dist](k-distance.png)
 
-## 实践应用
-
-最初决定引入一个聚类的方式是为了尝试在 UE 中将放置某种包围盒的步骤自动化，从而提高迭代效率。
-
-我在场景中沿着 Nav Mesh 生成了采样点，采样点的数量为 4643 个，分布如下：
-
-![Samples](Samples.png)
-_可以视作采样点的集合 D_
-
-在对其他聚类算法有了一定的了解后，选择了使用 DBSCAN。这个选择出于以下几个原因：
-
-1. 采样点是沿着 Nav Mesh 生成的，密度比较平均
-2. DBSCAN 的算法比较简单，易于实现
-3. 自动聚类的功能不是核心功能，更像是一个 bonus，因此我不想在这上面耗费太多时间
-
-### 实现参考
+## 实现参考
 
 这里的参考选择了 [SimpleDBSCAN](https://github.com/CallmeNezha/SimpleDBSCAN)，一个轻量的 header-only 的 C++ 实现。SimpleDBSCAN 的实现中使用了 [kd 树](https://oi-wiki.org/ds/kdt/)来做复杂的样本划分，以加速大样本的查询。
 
-### 效果
+## 最终效果
 
-使用 DBSCAN 进行聚类的结果如下，其中 MinPts = 10, Epsilon = 450:
+使用 DBSCAN 进行聚类的结果如下，其中 **MinPts = 10**, **Epsilon = 450**:
 
 | 聚类结果 | 噪声 |
 | ![MinPts = 10, Epsilon = 450](MinPts=10_Eps=450.png) | ![Noises](MinPts=10_Eps=450_Noises.png) |
@@ -87,16 +93,20 @@ _可以视作采样点的集合 D_
 
 在引擎中导出 k-distance 数据后，使用 pyplot 绘制图像如下：
 
-![k-distance](Kdist-Figure-5.png)
+![k-distance](6dist.png)
 
-由于样本点数目较多，因此很难直观地看出拐点在哪里，缩小一下范围，合适的值的大概位于这个区间中：
+由于样本点数目较多，因此很难直观地看出拐点在哪里，缩小一下范围，合适的值的大概位于 [250, 320] 这个区间中：
 
-![slope](slopest_range.png)
+| ![slope](6dist-scale.png) | ![slope](6dist-scale2.png) |
 
 最后的结果：
 
 | 聚类结果 | 噪声 |
-| ![MinPts = 6, Epsilon = 300](MinPts=6_Eps=300.png) | ![Noises](MinPts=6_Eps=300_Noises.png) |
+| ![MinPts = 6, Epsilon = 288](MinPts=6_Eps=288.png) | ![Noises](MinPts=6_Eps=288_Noises.png) |
+
+## 总结
+
+
 
 ## 参考
 
