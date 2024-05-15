@@ -33,47 +33,55 @@ K-DOP (**D**iscrete **O**riented **P**olytope)
 
 这篇文章主要用于阐述如何使用主成分分析（**P**rincipal **C**omponents **A**nalysis）方法获得 OBB 的基向量，然后据此进一步创建 OBB。
 
-## PCA 介绍
+## PCA 介绍以及原理
 
 想象一下在二维平面上有一系列的点，我们需要找到这些点分布最为零散的两个方向，且有尽可能多的点（的投影）在这两个方向上。这里我们要找的这`两个方向`实际上就是主成分，也是 OBB 的基向量。
 
-***
-
-![PCA](PCA.png){: .w-70}
-_一个高斯分布的主成分分析。黑色的两个向量是此分布的协方差矩阵的特征向量，其长度为对应的特征值之平方根，并以分布的平均值为原点。_
+### 介绍
 
 主成分分析是一种统计分析、简化数据集的方法。它利用正交变换来对一系列可能相关的变量的观测值进行线性变换，从而投影为一系列线性不相关变量的值，这些*不相关变量*称为*主成分*。简单来讲，PCA 解决了这样一个问题：
 
 > 如果我们有一组N维向量，现在要将其降到K维（K小于N），那么我们应该如何选择K个基才能最大程度保留原有的信息？
 
-这里来回顾一下数理统计和线性代数的内容：
+![PCA](PCA.png){: .w-70}
+_一个高斯分布的主成分分析。黑色的两个向量是此分布的协方差矩阵的特征向量，其长度为对应的特征值之平方根，并以分布的平均值为原点。_
 
-在统计学里，**协方差（Covariance）**用于描述数据的相关程度。协方差越大，样本的相关性越强。
+### 原理
+
+PCA 中的主成分实际上指的是，使数据中的点的投影数量最多的向量，这个向量被称作主成分。
+
+那么如何找到主成分呢？这里来回顾一下数理统计和线性代数的内容。
+
+在统计学里，**方差（Variance）**用于描述数据的离散程度，**协方差（Covariance）**用于描述数据的相关程度。方差越大，数据越离散；协方差越大，样本的相关性越强。
 
 ![Covariance Trends](Covariance_trends.png){: .right}
 
-对期望为 $E(X)$ 和 $E(Y)$ 的随机变量 $X$ 和 $Y$ 的协方差定义如下：
+对于一维的数据，只需要找出方差最大的方向即可，这个方向就是一维数据的主成分，但对于更高维度的数据就需要引入协方差来解决。
+
+对期望为 $E(X)$ 和 $E(Y)$ 的随机变量 $X$ 和 $Y$ 的协方差 $Cov(X,Y)$ 定义如下：
 
 $$\begin{equation}
-cov(X,Y) = E[(X-E(X))(Y-E(Y))]
+Cov(X,Y) = E[(X-E(X))(Y-E(Y))] = E(XY) - E(X)E(Y)
 \end{equation}$$
 
-从上式可知，$cov(X,Y) = cov(Y,X)$。  
+从上式可知，$Cov(X,Y) = Cov(Y,X)$。
 
-参考右图，当 $cov(X,Y) > 0$ 时，两变量*线性正相关*；当 $cov(X,Y) < 0$ 时，两变量*线性负相关*。
-而当 $cov(X,Y) == 0$ 时，两变量*线性无关*。
+接下来要通过协方差来确定线性无关的方向，也就是独立的方向作为主成分。
+
+参考右图，当 $Cov(X,Y) > 0$ 时，两变量*线性正相关*；当 $Cov(X,Y) < 0$ 时，两变量*线性负相关*。
+而当 $Cov(X,Y) == 0$ 时，两变量*线性无关*。
 
 假设我们的数据是三维的，通过计算各维度数据的协方差后，可以得到这样的一个*实对称矩阵*，也就是**协方差矩阵**：
 
 $$\begin{bmatrix}
-cov(X,X) & cov(X,Y) & cov(X,Z) \\
-cov(Y,X) & cov(Y,Y) & cov(Y,Z) \\
-cov(Z,X) & cov(Z,Y) & cov(Z,Z) \\
+Cov(X,X) & Cov(X,Y) & Cov(X,Z) \\
+Cov(Y,X) & Cov(Y,Y) & Cov(Y,Z) \\
+Cov(Z,X) & Cov(Z,Y) & Cov(Z,Z) \\
 \end{bmatrix}$$
 
-主对角线的元素是变量与其自身的协方差，代表该变量的方差。
+主对角线的元素是变量与其自身的协方差，代表该变量的方差，非对角线上的元素代表协方差。
 
-按照 PCA 的定义，不相关变量是主成分，不相关的变量的协方差等于零，而在协方差矩阵的非对角线位置的是各维度变量的协方差。因此，我们需要对协方差矩阵做变换，使非对角线上的元素化为零。
+要找线性无关的方向，使得协方差等于零，就需要令协方差矩阵的非对角线位置的值为零。因此，我们需要对协方差矩阵做变换，使非对角线上的元素化为零,
 也就是将协方差矩阵**对角化**。
 
 由于协方差矩阵是一个实对称矩阵，因此它具有以下性质：
@@ -86,7 +94,7 @@ cov(Z,X) & cov(Z,Y) & cov(Z,Z) \\
 
 那么接下来的问题就是如何将协方差矩阵对角化，求得特征向量。
 
-以上是从 PCA 的定义出发来获得的 OBB 的基，详细的数学解释可以阅读[这篇文章](http://blog.codinglabs.org/articles/pca-tutorial.html)
+通过以上步骤便获得了主成分，也就是 OBB 的基向量，详细的数学解释可以阅读[这篇文章](http://blog.codinglabs.org/articles/pca-tutorial.html)。
 
 ## 算法
 
@@ -108,26 +116,26 @@ void PCA(samples, x, y, z)
     center /= samples.size()
 
     // 协方差矩阵
-    matrix3x3 covmatrix
+    matrix3x3 Covmatrix
     for p in samples:
-        covmatrix[0][0] += (p.x - center.x) * (p.x - center.x)
-        covmatrix[1][0] += (p.x - center.x) * (p.y - center.y)
-        covmatrix[2][0] += (p.x - center.x) * (p.z - center.z)
+        Covmatrix[0][0] += (p.x - center.x) * (p.x - center.x)
+        Covmatrix[1][0] += (p.x - center.x) * (p.y - center.y)
+        Covmatrix[2][0] += (p.x - center.x) * (p.z - center.z)
 
-        covmatrix[0][1] += (p.y - center.y) * (p.x - center.x)
-        covmatrix[1][1] += (p.y - center.y) * (p.y - center.y)
-        covmatrix[2][1] += (p.y - center.y) * (p.z - center.z)
+        Covmatrix[0][1] += (p.y - center.y) * (p.x - center.x)
+        Covmatrix[1][1] += (p.y - center.y) * (p.y - center.y)
+        Covmatrix[2][1] += (p.y - center.y) * (p.z - center.z)
 
-        covmatrix[0][2] += (p.z - center.z) * (p.x - center.x)
-        covmatrix[1][2] += (p.z - center.z) * (p.y - center.y)
-        covmatrix[2][2] += (p.z - center.z) * (p.z - center.z)
+        Covmatrix[0][2] += (p.z - center.z) * (p.x - center.x)
+        Covmatrix[1][2] += (p.z - center.z) * (p.y - center.y)
+        Covmatrix[2][2] += (p.z - center.z) * (p.z - center.z)
 
     // 将协方差矩阵归一化
-    for elem in covmatrix
+    for elem in Covmatrix
         elem /= samples.size()
 
     // 求解协方差矩阵的特征向量矩阵
-    matrix3x3 eigenVectors = computeEigenVectors(covmatrix)
+    matrix3x3 eigenVectors = computeEigenVectors(Covmatrix)
     vec3 lambda0 = eigenVectors.getColVector(0).normalize()
     vec3 lambda1 = eigenVectors.getColVector(1).normalize()
     vec3 lambda2 = eigenVectors.getColVector(2).normalize()
