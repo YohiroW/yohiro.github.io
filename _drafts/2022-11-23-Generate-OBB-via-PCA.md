@@ -2,8 +2,8 @@
 title: 使用 PCA 方法创建有向包围盒（OBB）
 author: Yohiro
 date: 2022-11-23
-categories: [Engine, Algorithm]
-tags: [geomertry, OBB, AABB]
+categories: [Algorithm]
+tags: [geomertry, engine, algorithm, math]
 render_with_liquid: false
 math: true
 img_path: /assets/images/OBB/
@@ -24,7 +24,6 @@ AABB (**A**xis-**A**ligned **B**ounding **B**ox)
 
 OBB (**O**riented **B**ounding **B**ox)
 : 定向包围盒（OBB）是包含其所属对象的且相对于坐标轴方向任意的最小的长方体。相较于 AABB，OBB 的空间利用率更高，但求交的时候也会变得复杂。
-    体
 
 K-DOP (**D**iscrete **O**riented **P**olytope)
 : 离散定向多面体 （DOP）是包含其所属对象的二维空间的凸多边形或者三维空间的凸多面体，它是一组无限远的定向平面移动到与物体相交而得到，于是 DOP 就是这些平面相交平面所生成的凸多面体。从 K 个平面构建的 DOP 称为 k-DOP。
@@ -32,19 +31,24 @@ K-DOP (**D**iscrete **O**riented **P**olytope)
 凸包 (Convex Hull)
 : 凸包是包容物体的最小凸体。如果物体是有限个点的集合，那么凸包就是一个多面体，实际上它是包容多面体的最小立体。
 
-这篇文章主要用于阐述如何使用主成分分析（**P**rincipal **C**omponents **A**nalysis）方法生成 OBB。
+这篇文章主要用于阐述如何使用主成分分析（**P**rincipal **C**omponents **A**nalysis）方法获得 OBB 的基向量，然后据此进一步创建 OBB。
 
 ## PCA 介绍
+
+想象一下在二维平面上有一系列的点，我们需要找到这些点分布最为零散的两个方向，且有尽可能多的点（的投影）在这两个方向上。这里我们要找的这`两个方向`实际上就是主成分，也是 OBB 的基向量。
+
+***
+
+![PCA](PCA.png){: .w-70}
+_一个高斯分布的主成分分析。黑色的两个向量是此分布的协方差矩阵的特征向量，其长度为对应的特征值之平方根，并以分布的平均值为原点。_
 
 主成分分析是一种统计分析、简化数据集的方法。它利用正交变换来对一系列可能相关的变量的观测值进行线性变换，从而投影为一系列线性不相关变量的值，这些*不相关变量*称为*主成分*。简单来讲，PCA 解决了这样一个问题：
 
 > 如果我们有一组N维向量，现在要将其降到K维（K小于N），那么我们应该如何选择K个基才能最大程度保留原有的信息？
 
-想象
-
 这里来回顾一下数理统计和线性代数的内容：
 
-在统计学里，协方差（Covariance）用于描述数据的相关程度。协方差越大，样本的相关性越强。
+在统计学里，**协方差（Covariance）**用于描述数据的相关程度。协方差越大，样本的相关性越强。
 
 ![Covariance Trends](Covariance_trends.png){: .right}
 
@@ -72,77 +76,90 @@ cov(Z,X) & cov(Z,Y) & cov(Z,Z) \\
 按照 PCA 的定义，不相关变量是主成分，不相关的变量的协方差等于零，而在协方差矩阵的非对角线位置的是各维度变量的协方差。因此，我们需要对协方差矩阵做变换，使非对角线上的元素化为零。
 也就是将协方差矩阵**对角化**。
 
-通过之前图形学的学习，我们知道将本地坐标系的某一点 P 转换到观察坐标系下需要乘观察矩阵，也就是矩阵乘法定义了一组变换：
+由于协方差矩阵是一个实对称矩阵，因此它具有以下性质：
 
-$$\begin{equation}
-P_V = ViewMatrix * P
-\end{equation}$$
+- 实对称矩阵的不同特征值所对应的特征向量是正交的
+- n 阶实对称矩阵必可对角化
+- k 重特征值必有 k 个线性无关的特征向量
 
-其中 P 为列向量，ViewMatrix 为观察矩阵。
+也就是说，对于三维向量所构成的协方差矩阵，必然存在三个正交的特征向量，而这三个特征向量正是 OBB 的基向量，也就是 OBB 本地坐标系的轴。
 
-![PCA](PCA.png){: .w-50}
-_一个高斯分布的主成分分析。黑色的两个向量是此分布的协方差矩阵的特征向量，其长度为对应的特征值之平方根，并以分布的平均值为原点。_
+那么接下来的问题就是如何将协方差矩阵对角化，求得特征向量。
+
+以上是从 PCA 的定义出发来获得的 OBB 的基，详细的数学解释可以阅读[这篇文章](http://blog.codinglabs.org/articles/pca-tutorial.html)
 
 ## 算法
 
+1. 获得模型的顶点作为输入样本集
+2. 对样本集中的每一个样本点，计算协方差矩阵
+3. 求解协方差矩阵的特征向量
+4. 对样本集中的每一个样本点，计算样本点在特征向量方向上的投影距离，以获得 OBB 在各轴向上的最大和最小值
+5. 将上一步得到的 OBB 坐标系下的数据转换到世界坐标系下
 
-
-### 代码
-
-这里使用 [eigen](https://github.com/PX4/eigen) 来做矩阵计算以及求解特征向量：
+伪代码如下：
 
 ```cpp
-static void ComputePCA(const TArray<FVector3f>& InPoints, const uint32 InPointOffset, const uint32 InPointCount, FVector3f& Mean, FVector3f& B0, FVector3f& B1, FVector3f& B2)
+void PCA(samples, x, y, z)
 {
-    Eigen::Matrix3f covariance = ComputeCovarianceMatrix(InPoints, Mean);
-    Eigen::SelfAdjointEigenSolver<Eigen::Matrix3f> eigen_solver(covariance, Eigen::ComputeEigenvectors);
-    Eigen::Matrix3f eigenVectorsPCA = eigen_solver.eigenvectors();
+    // 期望
+    vec3 center = 0
+    for p in samples:
+        center += p
+    center /= samples.size()
 
-    B0 = FVector3f(eigenVectorsPCA.col(0)(0), eigenVectorsPCA.col(0)(1), eigenVectorsPCA.col(0)(2));
-    B1 = FVector3f(eigenVectorsPCA.col(1)(0), eigenVectorsPCA.col(1)(1), eigenVectorsPCA.col(1)(2));
-    B2 = FVector3f(eigenVectorsPCA.col(2)(0), eigenVectorsPCA.col(2)(1), eigenVectorsPCA.col(2)(2));
+    // 协方差矩阵
+    matrix3x3 covmatrix
+    for p in samples:
+        covmatrix[0][0] += (p.x - center.x) * (p.x - center.x)
+        covmatrix[1][0] += (p.x - center.x) * (p.y - center.y)
+        covmatrix[2][0] += (p.x - center.x) * (p.z - center.z)
 
-    B0 = B0.GetSafeNormal();
-    B1 = B1.GetSafeNormal();
-    B2 = B2.GetSafeNormal();
+        covmatrix[0][1] += (p.y - center.y) * (p.x - center.x)
+        covmatrix[1][1] += (p.y - center.y) * (p.y - center.y)
+        covmatrix[2][1] += (p.y - center.y) * (p.z - center.z)
 
-    FVector3f LocalMinBound(FLT_MAX);
-    FVector3f LocalMaxBound(-FLT_MAX);
-    //for (const FVector3f& P : InPoints)
-    for (uint32 PointIt = 0; PointIt < InPointCount; ++PointIt)
-    {
-        FVector3f PLocal = InPoints[InPointOffset + PointIt] - Mean;
-        PLocal = FVector3f(
-            FVector3f::DotProduct(PLocal, B0),
-            FVector3f::DotProduct(PLocal, B1),
-            FVector3f::DotProduct(PLocal, B2));
+        covmatrix[0][2] += (p.z - center.z) * (p.x - center.x)
+        covmatrix[1][2] += (p.z - center.z) * (p.y - center.y)
+        covmatrix[2][2] += (p.z - center.z) * (p.z - center.z)
 
-        LocalMinBound.X = FMath::Min(LocalMinBound.X, PLocal.X);
-        LocalMinBound.Y = FMath::Min(LocalMinBound.Y, PLocal.Y);
-        LocalMinBound.Z = FMath::Min(LocalMinBound.Z, PLocal.Z);
+    // 将协方差矩阵归一化
+    for elem in covmatrix
+        elem /= samples.size()
 
-        LocalMaxBound.X = FMath::Max(LocalMaxBound.X, PLocal.X);
-        LocalMaxBound.Y = FMath::Max(LocalMaxBound.Y, PLocal.Y);
-        LocalMaxBound.Z = FMath::Max(LocalMaxBound.Z, PLocal.Z);
-    }
+    // 求解协方差矩阵的特征向量矩阵
+    matrix3x3 eigenVectors = computeEigenVectors(covmatrix)
+    vec3 lambda0 = eigenVectors.getColVector(0).normalize()
+    vec3 lambda1 = eigenVectors.getColVector(1).normalize()
+    vec3 lambda2 = eigenVectors.getColVector(2).normalize()
 
-    // Recompte the new mean in local space, and then compute its world position
-    const FVector3f LocalMean(
-        (LocalMaxBound.X + LocalMinBound.X) * 0.5f,
-        (LocalMaxBound.Y + LocalMinBound.Y) * 0.5f,
-        (LocalMaxBound.Z + LocalMinBound.Z) * 0.5f);
+    // 获得 OBB 坐标系下的各轴向上的最大和最小值
+    vec3 min,max
+    for p in samples:
+        vec3 local = p - center
+        local = vec3(
+            dot(local, lambda0),
+            dot(local, lambda1),
+            dot(local, lambda2)
+        )
 
-    const FVector3f LocalExtent(
-        (LocalMaxBound.X - LocalMinBound.X) * 0.5f,
-        (LocalMaxBound.Y - LocalMinBound.Y) * 0.5f,
-        (LocalMaxBound.Z - LocalMinBound.Z) * 0.5f);
+        min.x = min(local.x, min.x)
+        min.y = min(local.y, min.y)
+        min.z = min(local.z, min.z)
+        
+        max.x = max(local.x, max.x)
+        max.y = max(local.y, max.y)
+        max.z = max(local.z, max.z)
 
-    const FVector3f MeanPrime = Mean + B0 * LocalMean.X + B1 * LocalMean.Y + B2 * LocalMean.Z;
-    Mean = MeanPrime;
-
-    B0 *= LocalExtent.X;
-    B1 *= LocalExtent.Y;
-    B2 *= LocalExtent.Z;
+    vec3 localCenter = (min + max) * 0.5
+    vec3 localExtent = (max - min) * 0.5
+    
+    // 变换到世界坐标系下
+    vec3 worldCenter = center + lambda0 * localCenter.x + lambda1 * localCenter.y + lambda2 * localCenter.z 
+    x = lambda0 * localExtent.x
+    y = lambda1 * localExtent.y
+    z = lambda2 * localExtent.z
+    
+    ...
 }
 ```
 
