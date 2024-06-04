@@ -81,7 +81,7 @@ Cov(Z,X) & Cov(Z,Y) & Cov(Z,Z) \\
 
 主对角线的元素是变量与其自身的协方差，代表该变量的方差，非对角线上的元素代表协方差。
 
-要找线性无关的方向，使得协方差等于零，就需要令协方差矩阵的非对角线位置的值为零。因此，我们需要对协方差矩阵做变换，使非对角线上的元素化为零,
+要找线性无关的方向，就要使协方差等于零，就需要令协方差矩阵的非对角线位置的值为零。因此，我们需要对协方差矩阵做变换，使非对角线上的元素化为零,
 也就是将协方差矩阵**对角化**。
 
 由于协方差矩阵是一个实对称矩阵，因此它具有以下性质：
@@ -94,7 +94,9 @@ Cov(Z,X) & Cov(Z,Y) & Cov(Z,Z) \\
 
 那么接下来的问题就是如何将协方差矩阵对角化，求得特征向量。
 
-通过以上步骤便获得了主成分，也就是 OBB 的基向量，详细的数学解释可以阅读[这篇文章](http://blog.codinglabs.org/articles/pca-tutorial.html)。
+求解特征向量，可以参考 [Jacobi 迭代法](https://zh.wikipedia.org/wiki/%E9%9B%85%E5%8F%AF%E6%AF%94%E6%B3%95)，也可以调用其他三方数学库，如 Eigen。
+
+通过以上步骤便获得了主成分，也就是 OBB 的基向量，更详细的数学解释可以阅读[这篇文章](http://blog.codinglabs.org/articles/pca-tutorial.html)。
 
 ## 算法
 
@@ -171,6 +173,20 @@ void PCA(samples, x, y, z)
 }
 ```
 
+## 其他
+
+我的目的是通过 PCA 方法找到 OBB 的基，到这一步我已经达成目标了。但如果是使用 PCA 做数据降维，需要在上述取得特征向量后，将原始数据转换到以特征向量为基的数据空间内。假设我们要取 N 维数据，那么需要将特征向量按照其特征值的大小降序排列为矩阵，取前 N 行构成矩阵 P。那么，对于原数据 X 降至 N 维后的数据便是：
+
+$$
+Y = PX
+$$
+
+## 总结
+
+PCA 本质上是将方差最大的方向作为数据的主要特征（基），从几何方面看，它能够选择数据最离散的方向构建无关的正交的向量，正是因为这点，我们可以使用该算法得到 OBB。而在数理统计方面，它可以作为一种简化数据集的方法来处理复杂数据，比如用在人脸识别方面。
+
+但 PCA 假定主成分分布在正交的方向上，对于生成 OBB 没什么问题，但对于在非正交方向上方差较大的数据集，效果会很有限。
+
 ## 参考
 
 - [包围体](https://zh.wikipedia.org/wiki/%E5%8C%85%E5%9B%B4%E4%BD%93)
@@ -178,5 +194,7 @@ void PCA(samples, x, y, z)
 - [Covariance matrix](https://en.wikipedia.org/wiki/Covariance_matrix)
 - [PCA的数学原理](http://blog.codinglabs.org/articles/pca-tutorial.html)
 - [【引擎研发】OBB生成与可视化](https://zhuanlan.zhihu.com/p/523291781)
+- [如何生成OBB（OrientedboundingBox）方向包围盒](https://blog.csdn.net/qing101hua/article/details/53100112)
+- [雅可比法](https://zh.wikipedia.org/wiki/%E9%9B%85%E5%8F%AF%E6%AF%94%E6%B3%95)
 - [OBB generation via Principal Component Analysis](https://hewjunwei.wordpress.com/2013/01/26/obb-generation-via-principal-component-analysis/)
 - [PCA主成分分析学习总结](https://zhuanlan.zhihu.com/p/32412043)
