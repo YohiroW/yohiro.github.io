@@ -86,18 +86,27 @@ _以该拐点为界，左侧的点为噪声点，右侧的点为 Cluster 中的�
 
 ![k-distance](6dist.png)
 
-由于样本点数目较多，因此很难直观地看出拐点在哪里，这种情况下 k-dist 方法似乎不适用？试着缩小一下范围，拐点是位于 [250, 320] 这个区间中的值：
+由于样本点数目较多，因此很难直观地看出拐点在哪里，这种情况下 k-dist 方法似乎不适用？从上图中可以得到的信息是，在大概 [280,380] 这个范围内 k-dist 变化较快，也就是说在 [280,380] 之外的区域即使调整 Eps 也不会有明显变化。
 
-| ![slope](6dist-scale.png) | ![slope](6dist-scale2.png) |
+![slope](6dist-scale.png)
 
-下面是 **MinPts = 6**, **Epsilon = 288** 的结果：
+放大看了一下，最终我选择了 Eps = 288，下面是 **MinPts = 6**, **Epsilon = 288** 的结果：
 
 | 聚类结果 | 噪声 |
 | ![MinPts = 6, Epsilon = 288](MinPts=6_Eps=288.png) | ![Noises](MinPts=6_Eps=288_Noises.png) |
 
+最终的结果差强人意，但基本满足了我的需求。
+
+我也试了其他的参数，下面是 **MinPts = 10**, **Epsilon = 350** 的结果：
+
+| 聚类结果 |
+| ![MinPts = 10, Epsilon = 350](MinPts=6_Eps=288.png) |
+
+可以看到零碎的区域明显减少，因为随着 MinPts 和 Epsilon 的增大，划分 Cluster 的粒度逐渐变大。如果样本集中的密度相对平均，而又期望划分较大粒度的 Cluster，那么使用 k-dist 方法未必能直接获得结果，但是可以确定大致的范围，对样本的密度分布有一个直观的认识。
+
 ## 总结
 
-使用 k-dist 可以确定 DBSCAN 的参数的范围，但实际应用中最好还是搭配可视化的数据调试界面进行参数的调整。而且 k-dist 找的是适配最小的 Cluster 的一组参数，有些情况下，我们会期望划分的 Cluster 具有更大的粒度，这种情况下使用 k-dist 方法确定参数就显得不是那么合适了。
+使用 k-dist 可以确定 DBSCAN 的参数的范围，但实际应用中最好还是搭配可视化的数据调试界面进行参数的调整。而且 k-dist 找的是适配最小的 Cluster 的一组参数，有些情况下，我们会期望划分的 Cluster 具有较大的粒度，这种情况下使用 DBSCAN 或者 k-dist 方法确定参数可能不是那么合适了，或许 [HDBSCAN](https://scikit-learn.org/stable/modules/clustering.html#hdbscan) 和 [OPTICS](https://zh.wikipedia.org/wiki/OPTICS) 可以获得更好的结果。
 
 ## 参考
 
