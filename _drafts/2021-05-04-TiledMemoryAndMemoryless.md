@@ -1,5 +1,5 @@
 ---
-title: Tiled memory 和 memory less
+title: Tiled memory 与 memory less
 author: Yohiro
 date: 2021-05-04
 categories: [Mobile]
