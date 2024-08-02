@@ -29,26 +29,25 @@ img_path: /assets/images/TileMemoryAndMemoryless/
 
 简单来说，Tiled Memory 是 GPU 芯片上的内存，与通用显存（系统内存）相比，具有带宽较高、延迟较低、功耗较小的特点。
 
->Image layout transitions with VK_IMAGE_LAYOUT_UNDEFINED allow the implementation to discard the image subresource range, which can provide performance or power benefits. Tile-based architectures may be able to avoid flushing tile data to memory, and immediate style renderers may be able to achieve fast metadata clears to reinitialize frame buffer compression state, or similar.
+> Image layout transitions with VK_IMAGE_LAYOUT_UNDEFINED allow the implementation to discard the image subresource range, which can provide performance or power benefits. Tile-based architectures may be able to avoid flushing tile data to memory, and immediate style renderers may be able to achieve fast metadata clears to reinitialize frame buffer compression state, or similar.
 
-移动GPU一般都有 Tile Memory。 ， （还有一种与 Tile Memory 特性相反的系统内存。在移动设备中，CPU 和 GPU 通常共享此（物理）系统内存。）
+移动 GPU 一般都有 Tile Memory。 ， （还有一种与 Tile Memory 特性相反的系统内存。在移动设备中，CPU 和 GPU 通常共享此（物理）系统内存。）
 
-Metal 或 Vulkan 可以显式声明一个 RenderPass 来决定是否将 Tile 内存移动到设备（视频）内存（如果下一个渲染过程中不需要 Tile 内存中某个渲染过程的输出，那么显式地声明您可以想要丢弃 tile 内存中的数据（Memory Less，不要将 tile 内存中的数据移动到显存）或在下一个渲染通道中按原样使用 tile 内存中的数据而不将其移动到显存（。您还可以节省内存带宽。）
-20220414210550
+Metal 或 Vulkan 可以显式声明一个 RenderPass 来决定是否将 Tile 内存移动到系统内存（如果下一个渲染过程中不需要 Tile 内存中某个渲染过程的输出，那么显式地声明您可以想要丢弃 tile 内存中的数据（Memory Less，不要将 tile 内存中的数据移动到显存）或在下一个渲染通道中按原样使用 tile 内存中的数据而不将其移动到显存（。您还可以节省内存带宽。）
 
-然而，在OpenGL ES的情况下，没有RenderPass的概念，所以如果你想丢弃Tile内存中的数据而不将其移动到显存，你可以使用“glClear”函数来通知GPU驱动程序这一点。 （鉴于OpenGL ES Spec中没有有关Tile内存的信息，因此在调用“glClear”函数时是否执行此操作似乎因GPU驱动程序而异。）
+然而，在 OpenGL ES 的情况下，没有 RenderPass 的概念，所以如果你想丢弃 Tile 内存中的数据而不将其移动到显存，可以使用 `glClear` 函数来通知 GPU 驱动程序这一点。但由于 OpenGL ES Spec 中没有有关 Tile 内存的信息，因此在调用 `glClear` 函数时是否执行此操作似乎因 GPU 驱动程序而异。
 
-另外，在MSAA的情况下，存储像素值需要的内存是样本数量的N倍，但是 tile 内存的大小大于MSAA所需的内存大小，因此如果对MSAA采样数据可以存储在 tile 存储器中， tile 存储器存储MSAA的采样数据之后，可以在 tile 存储器中执行MSAA解析。
-因此，使用 MSAA 时和不使用 MSAA 时，内存带宽使用量是相同的（通过在 tile 内存上执行 MSAA Resolve，从 tile 内存传输到显存的数据大小与使用 MSAA 时相同。因为……）（Tile 内存非常接近 GPU 核心，因此数据传输和访问速度比显存快得多。）
+另外，在 MSAA 的情况下，存储像素值需要的内存是样本数量的 N 倍，但是 tile 内存的大小大于 MSAA 所需的内存大小，因此如果对 MSAA 采样数据可以存储在 tile 存储器中， tile 存储器存储 MSAA 的采样数据之后，可以在 tile 存储器中执行 MSAA 解析。
 
-Mali GPU支持称为“像素本地存储”的功能，这意味着在着色器阶段声明数据存储在 Tile Memory 中。声明为像素本地存储的类型的数据在渲染过程中仅存在于 tile 内存中，并且被丢弃而不是复制到显存（系统内存），从而防止不必要的内存带宽浪费。移动GPU通过基于 tile 的渲染对场景中的所有图元进行顶点着色，然后收集每个 tile （将渲染目标划分为一定尺寸（基于Mali GPU的16x16）的 tile ）上要绘制的图元。在为要绘制的每个 tile 收集场景中（在几何工作集中）的所有原始三角形后，仅对屏幕上可见的三角形执行片段着色（丢弃被遮挡的片段）（隐藏表面移除）。 在移动 GPU 上，按如下方式完成：一次对场景中的所有三角形执行顶点着色，为每个 tile 收集数据，然后一次为每个 tile 执行片段着色。
-这里，当对每个 tile 执行片段着色时，等于 tile 大小的渲染目标被存储在 tile 存储器中。 Pixel Local Storage是程序员直接定义要存储在这个Tile Memory中的数据的地方，
-在移动GPU上执行延迟渲染时，如果在G-buffer pass和Resolve pass中使用Pixel Local Storage，则存储G-buffer。作为显存（系统内存），您可以通过将其存储在 Tile Memory 中并在 Resolve pass 中立即读取来节省内存带宽。此外，存储在Tile Memory中的Pixel Local Storage数据不会转移到显存（只是被丢弃），因此这里也可以减少内存租用量。
+因此，使用 MSAA 时和不使用 MSAA 时，内存带宽使用量是相同的（通过在 tile 内存上执行 MSAA Resolve，从 tile 内存传输到显存的数据大小与使用 MSAA 时相同。因为 Tile 内存非常接近 GPU 核心，因此数据传输和访问速度比显存快得多。
+
+Mali GPU 支持称为[“像素本地存储”](https://community.arm.com/arm-community-blogs/b/graphics-gaming-and-vr-blog/posts/pixel-local-storage-on-arm-mali-gpus)的功能，这意味着在着色器阶段声明数据存储在 Tile Memory 中。声明为像素本地存储的类型的数据在渲染过程中仅存在于 tile 内存中，并且被丢弃而不是复制到显存（系统内存），从而防止不必要的内存带宽浪费。移动 GPU 通过基于 tile 的渲染对场景中的所有图元进行顶点着色，然后收集每个 tile （将渲染目标划分为一定尺寸（基于 Mali GPU 的 16x16）的 tile ）上要绘制的图元。在为要绘制的每个 tile 收集场景中（在几何工作集中）的所有原始三角形后，仅对屏幕上可见的三角形执行片段着色（丢弃被遮挡的片段）（隐藏表面移除）。 在移动 GPU 上，按如下方式完成：一次对场景中的所有三角形执行顶点着色，为每个 tile 收集数据，然后一次为每个 tile 执行片段着色。
+
+这里，当对每个 tile 执行片段着色时，等于 tile 大小的渲染目标被存储在 tile 存储器中。 Pixel Local Storage 是程序员直接定义要存储在这个 Tile Memory 中的数据的地方，在移动 GPU 上执行延迟渲染时，如果在 G-buffer pass 和 Resolve pass 中使用 Pixel Local Storage，则存储 G-buffer。作为显存（系统内存），您可以通过将其存储在 Tile Memory 中并在 Resolve pass 中立即读取来节省内存带宽。此外，存储在 Tile Memory 中的 Pixel Local Storage 数据不会转移到显存（只是被丢弃），因此这里也可以减少内存租用量。
 
 Arm 有个叫做 [How does a mobile GPU work?](https://interactive.arm.com/story/the-arm-manga-guide-to-the-mali-gpu/page/2/1) 的漫画，可以看一下。
 
 ## Memoryless
-
 
 ## 参考
 
