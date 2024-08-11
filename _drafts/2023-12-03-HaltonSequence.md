@@ -24,6 +24,12 @@ FVector3f VolumetricFogTemporalRandom(uint32 FrameNumber)
 }
 ```
 
+## 应用
+
+低维度的素数中具有不错的表现，但在稍大的素数生成的序列间存在相关性问题，比如 17、19。为避免这种情况，通常会删除前 20 个条目。还有其他的解决方案，详见[百科](https://en.wikipedia.org/wiki/Halton_sequence)。
+
+在游戏领域，绝大多数情况下使用前四个素数：2，3，5，7 就够用了。
+
 ## 实现
 
 ```c
@@ -43,6 +49,20 @@ float Halton(uint Index, uint Base)
 
     return r;
 }
+```
+
+## 扩展
+
+霍尔顿序列的索引可以是[莫顿码](https://en.wikipedia.org/wiki/Z-order_curve)，比如在 volumetric light map 的随机采样中：
+
+```c
+    int3 CellPosInVLM = (BrickRequests[BrickIndex].xyz * 4 + CellPosInBrick) * BrickRequests[BrickIndex].w;
+
+    float3 RandSample = float3(
+        Halton(MortonEncode3(CellPosInVLM) + EffectiveRenderPassIndex, 2), 
+        Halton(MortonEncode3(CellPosInVLM) + EffectiveRenderPassIndex, 3),
+        Halton(MortonEncode3(CellPosInVLM) + EffectiveRenderPassIndex, 5)
+    );
 ```
 
 ## 参考
