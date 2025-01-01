@@ -180,14 +180,14 @@ I = \frac{\Phi}{\pi} \\\\
 :
 
 $$\begin{equation}\label{spotAbsorber}
-L_{out} = f(v,l) \frac{\Phi}{\pi d^2} \left< \NoL \right> \lambda(l)
+L_{out} = f(v,l) \frac{\Phi}{\pi d^2} \left< N \cdot L \right> \lambda(l)
 \end{equation}$$
 
 从反射光的角度
 :
 
 $$\begin{equation}\label{spotReflector}
-L_{out} = f(v,l) \frac{\Phi}{2 \pi (1 - cos\frac{\theta_{outer}}{2}) d^2} \left< \NoL \right> \lambda(l)
+L_{out} = f(v,l) \frac{\Phi}{2 \pi (1 - cos\frac{\theta_{outer}}{2}) d^2} \left< N \cdot L \right> \lambda(l)
 \end{equation}$$
 
 以上两式中的 $$\lambda(l)$$ 项是聚光灯的角度衰减因子，描述如下：
@@ -209,9 +209,76 @@ $$\begin{equation}\label{finitePunctualLight}
 E = \frac{I}{max(d^2, {0.01}^2)}
 \end{equation}$$
 
-为解决问题 2， 可以为每个光源引入一个影响半径的参数解决。
+为解决问题 2， 可以为每个光源引入一个影响半径的参数解决。通过引入这一变量可以展示给美术光源所影响到的范围，也能方便引擎渲染时剔除光源。
 
-从数学上讲，光的照度应在影响半径定义的极限处平滑地达到零。
+由 GLSL 实现的基于物理的精准光源参考：
+```glsl
+float getSquareFalloffAttenuation(vec3 posToLight, float lightInvRadius)
+{
+    float distanceSquare = dot(posToLight, posToLight);
+    float factor = distanceSquare * lightInvRadius * lightInvRadius;
+    float smoothFactor = max(1.0 - factor * factor, 0.0);
+    return (smoothFactor * smoothFactor) / max(distanceSquare, 1e-4);
+}
+
+float getSpotAngleAttenuation(vec3 l, vec3 lightDir, float innerAngle, float outerAngle)
+{
+    // 缩放和偏移计算可以在CPU端完成
+    float cosOuter = cos(outerAngle);
+    float spotScale = 1.0 / max(cos(innerAngle) - cosOuter, 1e-4)
+    float spotOffset = -cosOuter * spotScale
+
+    float cd = dot(normalize(-lightDir), l);
+    float attenuation = clamp(cd * spotScale + spotOffset, 0.0, 1.0);
+    return attenuation * attenuation;
+}
+
+vec3 evaluatePunctualLight()
+{
+    vec3 l = normalize(posToLight);
+    float NoL = clamp(dot(n, l), 0.0, 1.0);
+    vec3 posToLight = lightPosition - worldPosition;
+
+    float attenuation;
+    attenuation  = getSquareFalloffAttenuation(posToLight, lightInvRadius);
+    attenuation *= getSpotAngleAttenuation(l, lightDir, innerAngle, outerAngle);
+
+    // 这里的光照强度的单位是坎德拉，可由光照功率转换而来
+    vec3 luminance = (BSDF(v, l) * lightIntensity * attenuation * NoL) * lightColor;
+    return luminance;
+}
+```
+以上的部分计算可在 CPU 端完成。
+
+### 光度学光源
+
+TODO
+
+### 面光源
+
+TODO
+
+### 光源参数
+
+Filement 的目标是使光源参数易于美工和开发人员使用. 为此需要直观方便，因此光源颜色(或色调)与光源强度相互独立，且光源的颜色定义为线性 RGB 颜色(或在外部工具/UI 中使用 sRGB)。
+
+| 参数             | 定义            |
+|:----------------|:----------------|
+| 光源类型         | 平行光 Directional, 点光源 point, 聚光灯 spot, 面光源 area |
+| 方向             | 平行光、点光、聚光灯、面光的方向 |
+| 光源颜色         | 发射出的光的颜色，指定为线性 RGB，在外部工具中可以 sRGB 或色温指定 |
+| 光照强度         | 直观的反映为灯光的亮度，具体单位取决于光源类型      |
+| 衰减半径         | 最大的影响距离     |
+| 内锥角           | 聚光灯形成的内圆锥体的角度   |
+| 外锥角           | 聚光灯形成的外圆锥体的角度   |
+| 长度            | 面光源的长度, 用于创建线性或管状灯光 |
+| 半径            | 面光源的半径, 用于创建球形或管状灯光 |
+
+#### 色温
+
+真实世界中的人造灯光通常由它们的色温来定义, 以开尔文(K)为单位. 光源的色温是理想黑体辐射体的温度, 此黑体辐射出的光的色调与光源相当. 为方便起见, 这些工具应该支持美工使用色温指定光源的色调(有意义的范围为1,000 K到12,500 K)。
+
+### 预曝光
 
 ## IBL
 
