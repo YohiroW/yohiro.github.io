@@ -61,10 +61,6 @@ jobs:
         with:
           path: "_site${{ steps.pages.outputs.base_path }}"
 
-      - name: List files in the repository
-        run: |
-          ls ${{ github.workspace }}
-          
   deploy:
     environment:
       name: github-pages
