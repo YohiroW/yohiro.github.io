@@ -5,7 +5,7 @@ date: 2020-08-17
 categories: [UnrealEngine]
 tags: [unrealengine, optimization, tool]
 render_with_liquid: false
-img_path: /assets/images/PGOInUnreal/
+media_subpath: /assets/images/PGOInUnreal/
 ---
 
 ## 简介

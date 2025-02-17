@@ -6,7 +6,7 @@ categories: [Algorithm, Machine Learning]
 tags: [algorithm, machine learning, clustering]
 math: true
 render_with_liquid: false
-img_path: /assets/images/DBSCAN/
+media_subpath: /assets/images/DBSCAN/
 ---
 ## 介绍
 

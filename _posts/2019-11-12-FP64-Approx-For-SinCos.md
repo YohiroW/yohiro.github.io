@@ -5,7 +5,7 @@ date: 2019-11-12
 categories: [Math, OpenGL]
 tags: [math, optimization, opengl]
 render_with_liquid: false
-img_path: /assets/images/{}/
+media_subpath: /assets/images/{}/
 ---
 
 对 GLSL 中缺失的 FP64 函数的近似，其他的信息可以参考[**OpenGL中地图投影的双精度近似**](https://outerra.blogspot.com/2014/05/double-precision-approximations-for-map.html)

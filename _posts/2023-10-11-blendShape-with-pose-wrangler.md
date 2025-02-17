@@ -5,7 +5,7 @@ date: 2023-10-11
 categories: [Animation, UnrealEngine]
 tags: [animation, blendshape, maya, deform]
 render_with_liquid: false
-img_path: /assets/images/blendshape/
+media_subpath: /assets/images/blendshape/
 ---
 
 

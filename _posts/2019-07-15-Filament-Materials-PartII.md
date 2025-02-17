@@ -5,7 +5,7 @@ date: 2019-07-15
 categories: [3D, Graphics]
 tags: [3D, rendering, graphics, material]
 math: true
-img_path: /assets/images/Filament/
+media_subpath: /assets/images/Filament/
 ---
 
 本篇是 [**Filament**](https://google.github.io/filament/Filament.html) 的笔记，以及部分自己的理解。

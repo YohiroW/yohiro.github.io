@@ -5,7 +5,7 @@ date: 2022-08-21
 categories: [Graphics,Optimization,AMD]
 tags: [graphics, optimization, amd, compression]
 render_with_liquid: false
-img_path: /assets/images/{}/
+media_subpath: /assets/images/{}/
 ---
 
 ## 问题

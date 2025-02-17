@@ -5,7 +5,7 @@ date: 2021-09-28
 categories: [Unreal, Rendering, Graphics]
 tags: [graphics, rendering, profile, unrealengine]
 render_with_liquid: false
-img_path: /assets/images/{}/
+media_subpath: /assets/images/{}/
 ---
 ## 背景
 

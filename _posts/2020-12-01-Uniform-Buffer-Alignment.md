@@ -4,7 +4,7 @@ author: Yohiro
 date: 2020-12-01
 categories: [Rendering]
 tags: [engine, programming, rendering, opengl, unrealengine]
-img_path: /assets/images/UniformTable/
+media_subpath: /assets/images/UniformTable/
 ---
 ## 背景
 
