@@ -2,18 +2,20 @@ version: 2
 updates:
   - package-ecosystem: "bundler"
     directory: "/"
+    versioning-strategy: increase
+    groups:
+      bundler:
+        dependency-type: "production"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
   - package-ecosystem: "npm"
     directory: "/"
     versioning-strategy: increase
     groups:
-      prod-deps:
-        dependency-type: production
-      dev-deps:
-        dependency-type: development
+      npm:
+        dependency-type: "development"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
   - package-ecosystem: "github-actions"
     directory: "/"
     groups:
@@ -21,8 +23,4 @@ updates:
         update-types:
           - "major"
     schedule:
-      interval: "weekly"
-  - package-ecosystem: "devcontainers"
-    directory: "/"
-    schedule:
-      interval: weekly
+      interval: "monthly"
