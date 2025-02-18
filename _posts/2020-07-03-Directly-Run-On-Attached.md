@@ -5,7 +5,7 @@ date: 2020-07-03
 categories: [Debug]
 tags: [unrealengine, visualstudio, extension, tool]
 render_with_liquid: false
-media_subpath: /assets/images/DirectlyRunOnAttached/
+img_path: /assets/images/DirectlyRunOnAttached/
 ---
 ## 背景
 

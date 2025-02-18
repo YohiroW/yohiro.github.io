@@ -8,7 +8,7 @@ order: 5
 
 > 玩家，也是游戏开发者，人生目标是做出自己中二时期构想的游戏🎮
 
----
+<!-- ---
 <div class="container">
   <div class="experience">
     <div class="item">
@@ -42,4 +42,4 @@ order: 5
       </div>
     </div>
   </div>
-</div>
+</div> -->

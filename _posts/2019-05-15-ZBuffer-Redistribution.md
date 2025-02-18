@@ -6,7 +6,7 @@ categories: [Engine, Rendering, Optimization]
 tags: [engine, rendering, optimization, math, depth]
 render_with_liquid: false
 math: true
-media_subpath: /assets/images/ZRedistribution/
+img_path: /assets/images/ZRedistribution/
 ---
 
 ## 背景

@@ -6,7 +6,7 @@ categories: [Algorithm]
 tags: [geomertry, engine, algorithm, math]
 render_with_liquid: false
 math: true
-media_subpath: /assets/images/OBB/
+img_path: /assets/images/OBB/
 ---
 
 ## 背景

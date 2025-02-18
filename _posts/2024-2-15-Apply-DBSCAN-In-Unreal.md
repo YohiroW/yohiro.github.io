@@ -6,7 +6,7 @@ categories: [Unreal]
 tags: [algorithm, machine learning, unrealengine]
 math: true
 render_with_liquid: false
-media_subpath: /assets/images/DBSCAN/
+img_path: /assets/images/DBSCAN/
 ---
 ## 介绍
 

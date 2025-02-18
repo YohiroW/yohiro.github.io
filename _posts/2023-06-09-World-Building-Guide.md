@@ -5,7 +5,7 @@ date: 2023-06-09
 categories: [UnrealEngine]
 tags: [unrealengine, world partition, streaming]
 render_with_liquid: false
-media_subpath: /assets/images/{}/
+img_path: /assets/images/{}/
 ---
 
 ## [**World Partition**](https://docs.unrealengine.com/5.1/en-US/world-partition-in-unreal-engine/)

@@ -5,7 +5,7 @@ date: 2021-05-04
 categories: [Mobile]
 tags: [mobile, memory, architecture, vulkan]
 render_with_liquid: false
-media_subpath: /assets/images/TileMemoryAndMemoryless/
+img_path: /assets/images/TileMemoryAndMemoryless/
 ---
 
 ## 背景

@@ -6,7 +6,7 @@ categories: [Rendering]
 tags: [engine, unrealengine, colorspace, HDR]
 math: true
 render_with_liquid: false
-media_subpath: /assets/images/ColorPipeline/
+img_path: /assets/images/ColorPipeline/
 ---
 
 在处理材质贴图、Sampler 或 RenderTarget 时，经常会看到 sRGB/Linear 字样。颜色在渲染时是如何编码解码的？在不同的阶段是怎样的颜色类型？发生怎样的转换？这篇文章尝试回答这些问题。

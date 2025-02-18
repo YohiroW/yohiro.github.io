@@ -5,7 +5,7 @@ date: 2023-07-05
 categories: [UnrealEngine, Graphics, Rendering]
 tags: [graphics, engine, unrealengine, occlusion query]
 render_with_liquid: false
-media_subpath: /assets/images/OcclusionQuery/
+img_path: /assets/images/OcclusionQuery/
 ---
 
 ## 概述

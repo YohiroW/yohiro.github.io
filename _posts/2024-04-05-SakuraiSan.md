@@ -5,7 +5,7 @@ date: 2024-04-05
 categories: [Design]
 tags: [game, design]
 render_with_liquid: false
-media_subpath: /assets/images/{}/
+img_path: /assets/images/{}/
 ---
 
 ## 介绍
